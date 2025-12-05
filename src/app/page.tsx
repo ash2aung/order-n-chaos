@@ -1,43 +1,48 @@
 "use client";
 import { useState, useEffect } from "react";
-import { CellValue, PlayerRole, GameStatus } from "../utils/types";
+import { CellValue, PlayerRole, GameStatus } from "../utils/type";
 import { checkFiveInARow, getAIMove } from "../utils/gameLogic";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
-  // --- STATE ---
   const [boardSize, setBoardSize] = useState(6);
   const [board, setBoard] = useState<CellValue[][]>([]);
-  const [humanRole, setHumanRole] = useState<PlayerRole>('Order');
-  const [aiRole, setAiRole] = useState<PlayerRole>('Chaos');
-  const [turn, setTurn] = useState<'HUMAN' | 'AI'>('HUMAN');
-  const [gameStatus, setGameStatus] = useState<GameStatus>('PLAYING');
-  const [selectedSymbol, setSelectedSymbol] = useState<'X' | 'O'>('X');
+  const [humanRole, setHumanRole] = useState<PlayerRole>("Order");
+  const [aiRole, setAiRole] = useState<PlayerRole>("Chaos");
+  const [turn, setTurn] = useState<"HUMAN" | "AI">("HUMAN");
+  const [gameStatus, setGameStatus] = useState<GameStatus>("PLAYING");
+  const [selectedSymbol, setSelectedSymbol] = useState<"X" | "O">("X");
 
-  // --- INITIALIZATION ---
-  // Runs once on load, or when boardSize changes
   useEffect(() => {
     resetGame();
   }, [boardSize]);
 
   const resetGame = () => {
-    // Create empty grid
-    const newBoard = Array(boardSize).fill(null).map(() => Array(boardSize).fill(null));
+    const newBoard = Array(boardSize)
+      .fill(null)
+      .map(() => Array(boardSize).fill(null));
     setBoard(newBoard);
-    
-    // Randomize Roles (like your C++ decide_roles_and_order)
+
     const isHumanOrder = Math.random() > 0.5;
-    setHumanRole(isHumanOrder ? 'Order' : 'Chaos');
-    setAiRole(isHumanOrder ? 'Chaos' : 'Order');
-    
-    // Randomize who goes first
-    setTurn(Math.random() > 0.5 ? 'HUMAN' : 'AI');
-    setGameStatus('PLAYING');
+    setHumanRole(isHumanOrder ? "Order" : "Chaos");
+    setAiRole(isHumanOrder ? "Chaos" : "Order");
+
+    setTurn(Math.random() > 0.5 ? "HUMAN" : "AI");
+    setGameStatus("PLAYING");
   };
 
-  // --- AI TURN HANDLER ---
   useEffect(() => {
-    if (turn === 'AI' && gameStatus === 'PLAYING') {
-      // Add a small delay so it feels like the computer is thinking
+    if (turn === "AI" && gameStatus === "PLAYING") {
       const timer = setTimeout(() => {
         const move = getAIMove(board, aiRole);
         if (move) {
@@ -46,117 +51,166 @@ export default function Home() {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [turn, gameStatus, board]);
+  }, [turn, gameStatus, board, aiRole]);
 
-  // --- MOVE LOGIC ---
-  const executeMove = (r: number, c: number, symbol: 'X' | 'O') => {
-    const newBoard = board.map(row => [...row]); // Copy board
+  const executeMove = (r: number, c: number, symbol: "X" | "O") => {
+    const newBoard = board.map((row) => [...row]);
     newBoard[r][c] = symbol;
     setBoard(newBoard);
 
-    // Check Win Conditions
-    const xWins = checkFiveInARow(newBoard, 'X');
-    const oWins = checkFiveInARow(newBoard, 'O');
-    
-    // 1. Check Order Win (5 in a row of anything)
+    const xWins = checkFiveInARow(newBoard, "X");
+    const oWins = checkFiveInARow(newBoard, "O");
+
     if (xWins || oWins) {
-      setGameStatus('ORDER_WINS');
+      setGameStatus("ORDER_WINS");
       return;
     }
 
-    // 2. Check Chaos Win (Board full, no 5 in a row)
-    const isFull = newBoard.every(row => row.every(cell => cell !== null));
+    const isFull = newBoard.every((row) => row.every((cell) => cell !== null));
     if (isFull) {
-      setGameStatus('CHAOS_WINS');
+      setGameStatus("CHAOS_WINS");
       return;
     }
 
-    // Toggle Turn
-    setTurn(prev => prev === 'HUMAN' ? 'AI' : 'HUMAN');
+    setTurn((prev) => (prev === "HUMAN" ? "AI" : "HUMAN"));
   };
 
   const handleCellClick = (r: number, c: number) => {
-    if (gameStatus !== 'PLAYING' || turn !== 'HUMAN' || board[r][c] !== null) return;
+    if (gameStatus !== "PLAYING" || turn !== "HUMAN" || board[r][c] !== null)
+      return;
     executeMove(r, c, selectedSymbol);
   };
 
-  // --- RENDER ---
+  const isGameOver = gameStatus !== "PLAYING";
+  const didHumanWin =
+    (gameStatus === "ORDER_WINS" && humanRole === "Order") ||
+    (gameStatus === "CHAOS_WINS" && humanRole === "Chaos");
+
   return (
-    <main className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-        Order & Chaos
-      </h1>
-
-      {/* STATUS BAR */}
-      <div className="mb-6 text-center space-y-2">
-        <div className="text-lg">
-          You are <span className="font-bold text-yellow-400">{humanRole}</span> vs AI <span className="font-bold text-red-400">{aiRole}</span>
-        </div>
-        <div className="text-xl font-semibold">
-          {gameStatus === 'PLAYING' 
-            ? `Turn: ${turn === 'HUMAN' ? 'Your Move' : 'AI Thinking...'}`
-            : <span className={gameStatus === 'ORDER_WINS' ? 'text-green-400' : 'text-orange-400'}>
-                GAME OVER: {gameStatus.replace('_', ' ')}!
-              </span>
-          }
-        </div>
+    <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 font-sans">
+      {/* Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-medium tracking-tight text-foreground">
+          Order & Chaos
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          A game of pattern and entropy
+        </p>
       </div>
 
-      {/* CONTROLS (Only visible when playing) */}
-      <div className="mb-4 flex gap-4">
-        {gameStatus === 'PLAYING' && turn === 'HUMAN' && (
-          <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
-            <span className="mr-3 text-sm text-slate-400">Place:</span>
-            <button 
-              onClick={() => setSelectedSymbol('X')}
-              className={`px-4 py-1 rounded mr-2 ${selectedSymbol === 'X' ? 'bg-blue-600' : 'bg-slate-700'}`}
-            >X</button>
-            <button 
-              onClick={() => setSelectedSymbol('O')}
-              className={`px-4 py-1 rounded ${selectedSymbol === 'O' ? 'bg-red-600' : 'bg-slate-700'}`}
-            >O</button>
-          </div>
+      {/* Role Badges */}
+      <div className="flex items-center gap-3 mb-6">
+        <Badge variant="outline" className="font-normal">
+          You: {humanRole}
+        </Badge>
+        <Separator orientation="vertical" className="h-4" />
+        <Badge variant="secondary" className="font-normal">
+          AI: {aiRole}
+        </Badge>
+      </div>
+
+      {/* Status */}
+      <div className="mb-6 h-6">
+        {isGameOver ? (
+          <p
+            className={`text-sm font-medium ${didHumanWin ? "text-foreground" : "text-muted-foreground"}`}
+          >
+            {didHumanWin ? "You win." : "AI wins."}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {turn === "HUMAN" ? "Your turn" : "Thinking..."}
+          </p>
         )}
-        
-        <button onClick={resetGame} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded border border-slate-500">
+      </div>
+
+      {/* Symbol Selector */}
+      {gameStatus === "PLAYING" && turn === "HUMAN" && (
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={selectedSymbol === "X" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setSelectedSymbol("X")}
+            className="w-12 font-mono"
+          >
+            X
+          </Button>
+          <Button
+            variant={selectedSymbol === "O" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setSelectedSymbol("O")}
+            className="w-12 font-mono"
+          >
+            O
+          </Button>
+        </div>
+      )}
+
+      {/* Game Board */}
+      <Card className="p-1">
+        <CardContent className="p-2">
+          <div
+            className="grid gap-px bg-border"
+            style={{
+              gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))`,
+            }}
+          >
+            {board.map((row, rIndex) =>
+              row.map((cell, cIndex) => (
+                <button
+                  key={`${rIndex}-${cIndex}`}
+                  onClick={() => handleCellClick(rIndex, cIndex)}
+                  disabled={
+                    gameStatus !== "PLAYING" ||
+                    turn !== "HUMAN" ||
+                    cell !== null
+                  }
+                  className={`
+                    w-10 h-10 sm:w-12 sm:h-12 
+                    flex items-center justify-center 
+                    text-lg font-mono font-medium
+                    bg-card
+                    transition-colors duration-150
+                    ${cell === null && gameStatus === "PLAYING" && turn === "HUMAN" ? "hover:bg-accent cursor-pointer" : "cursor-default"}
+                    ${cell === "X" ? "text-foreground" : "text-muted-foreground"}
+                    disabled:cursor-default
+                  `}
+                >
+                  {cell}
+                </button>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Controls */}
+      <div className="mt-8 flex items-center gap-4">
+        <Button variant="outline" size="sm" onClick={resetGame}>
           New Game
-        </button>
-      </div>
+        </Button>
 
-      {/* BOARD */}
-      <div 
-        className="grid gap-1 bg-slate-700 p-2 rounded-lg shadow-2xl"
-        style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
-      >
-        {board.map((row, rIndex) => (
-          row.map((cell, cIndex) => (
-            <div
-              key={`${rIndex}-${cIndex}`}
-              onClick={() => handleCellClick(rIndex, cIndex)}
-              className={`
-                w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center 
-                text-2xl sm:text-3xl font-bold cursor-pointer select-none transition-colors
-                ${cell === null ? 'bg-slate-800 hover:bg-slate-750' : 'bg-slate-800'}
-                ${cell === 'X' ? 'text-blue-500' : 'text-red-500'}
-              `}
-            >
-              {cell}
-            </div>
-          ))
-        ))}
-      </div>
-
-      {/* SETTINGS */}
-      <div className="mt-8 flex items-center gap-2 text-sm text-slate-400">
-        <label>Board Size:</label>
-        <select 
-          value={boardSize} 
-          onChange={(e) => setBoardSize(Number(e.target.value))}
-          className="bg-slate-800 border border-slate-600 rounded px-2 py-1"
+        <Select
+          value={boardSize.toString()}
+          onValueChange={(val) => setBoardSize(Number(val))}
         >
-          {[6, 7, 8, 9].map(s => <option key={s} value={s}>{s}x{s}</option>)}
-        </select>
+          <SelectTrigger className="w-24 h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[6, 7, 8, 9].map((s) => (
+              <SelectItem key={s} value={s.toString()}>
+                {s} × {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-12 text-xs text-muted-foreground">
+        <p>Order seeks five in a row. Chaos seeks to prevent it.</p>
+      </footer>
     </main>
   );
 }
