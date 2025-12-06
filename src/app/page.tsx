@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Info, X as XIcon } from "lucide-react";
+import { Info, X as XIcon, Github } from "lucide-react";
 
 export default function Home() {
   const [boardSize, setBoardSize] = useState(6);
@@ -294,6 +294,20 @@ export default function Home() {
             </Card>
         </div>
       )}
+
+      {/* FOOTER */}
+      <footer className="mt-24 mb-8 flex flex-col items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 z-10">
+        <p>© {new Date().getFullYear()} Order & Chaos.</p>
+        <a 
+            href="https://github.com/ash2aung/order-n-chaos" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+        >
+            <Github className="w-4 h-4" />
+            <span></span>
+        </a>
+      </footer>
 
     </main>
   );
